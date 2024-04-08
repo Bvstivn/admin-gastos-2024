@@ -4,27 +4,43 @@
       <h1>Planificador de gastos</h1>
       <div class="contenedor-header contenedor sombra">
       <Presupuesto v-if="presupuesto === 0" @definir-presupuesto="definirPresupuesto"/>
-      <ControlPresupuesto v-else />
+      <ControlPresupuesto v-else :presupuesto="presupuesto" :disponible="disponible" />
       </div>
     </header>
   </div>
-  <Filtro/>
+  <main v-if="presupuesto > 0">
+    <div class="crear-gasto">
+      <img :src="iconoNuevoGasto" alt="nuevo-gasto" @click="mostrarModal">
+    </div>
+  </main>
 </template>
 
 <script setup>
 //Vue
-import { ref } from 'vue';
+import { ref, reactive } from 'vue';
 //Components
-import Filtro from './components/Filtro.vue';
+import Modal from './components/Modal.vue';
 import Presupuesto from './components/Presupuesto.vue';
 import ControlPresupuesto from './components/ControlPresupuesto.vue';
+//Iconos
+import iconoNuevoGasto from "../src/assets/img/nuevo-gasto.svg";
 
 //Data
+const modal = reactive({
+  mostrar: false,
+  animar: false,
+});
 const presupuesto = ref(0);
+const disponible = ref(0);
 
 //Methods
 const definirPresupuesto = (cantidad) => {
   presupuesto.value = cantidad;
+}
+
+const mostrarModal = () => {
+  modal.mostrar = true;
+  modal.animar = true;
 }
 
 </script>
@@ -83,4 +99,14 @@ const definirPresupuesto = (cantidad) => {
     border-radius: 1.2rem;
     padding: 5rem;
   }
+  .crear-gasto{
+    position: fixed;
+    bottom: 5rem;
+    right: 5rem;
+  }
+  .crear-gasto img{
+    width: 5rem;
+    cursor: pointer;
+  }
+
 </style>
