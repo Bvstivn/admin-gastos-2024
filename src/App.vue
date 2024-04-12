@@ -13,6 +13,7 @@
       <img :src="iconoNuevoGasto" alt="nuevo-gasto" @click="mostrarModal">
     </div>
   </main>
+  <Modal :modal="modal" v-if="modal.mostrar" @ocultar-modal="ocultarModal" v-model:nombre="gasto.nombre" v-model:cantidad="gasto.cantidad" v-model:categoria="gasto.categoria"/>
 </template>
 
 <script setup>
@@ -32,6 +33,13 @@ const modal = reactive({
 });
 const presupuesto = ref(0);
 const disponible = ref(0);
+const gasto = reactive({
+  nombre: '',
+  cantidad: '',
+  categoria: '',
+  id: null,
+  fecha: Date.now()
+});
 
 //Methods
 const definirPresupuesto = (cantidad) => {
@@ -40,7 +48,16 @@ const definirPresupuesto = (cantidad) => {
 
 const mostrarModal = () => {
   modal.mostrar = true;
+  setTimeout(() => {
+    modal.animar = true;
+  }, 300);
+}
+
+const ocultarModal = () => {
   modal.animar = true;
+  setTimeout(() => {
+    modal.mostrar = false;
+  }, 300);
 }
 
 </script>
