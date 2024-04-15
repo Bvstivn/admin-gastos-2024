@@ -3,23 +3,42 @@
     <div class="cerrar-modal">
       <img :src="cerrarModal" alt="cerrar-modal" @click="ocultarModal" />
     </div>
-    <div class="contenedor contenedor-formulario" :class="modal.animar ? 'animar' : 'cerrar'">
-      <form class="nuevo-gasto">
+    <div
+      class="contenedor contenedor-formulario"
+      :class="modal.animar ? 'animar' : 'cerrar'"
+    >
+      <form class="nuevo-gasto" @submit.prevent="agregarGasto">
         <legend>Añadir Gasto</legend>
+
+        <Alerta v-if="error">
+          {{ error }}
+        </Alerta>
 
         <div class="campo">
           <label for="nombre">Nombre Gasto:</label>
-          <input type="text" id="nombre" placeholder="Añade Nombre del Gasto" :value="nombre" />
+          <input
+            type="text"
+            id="nombre"
+            placeholder="Añade Nombre del Gasto"
+            :value="nombre"
+            @input="$event => $emit('update:nombre', $event.target.value)"
+          />
         </div>
 
         <div class="campo">
           <label for="cantidad">Cantidad:</label>
-          <input type="number" id="cantidad" placeholder="Añade cantidad" :value="cantidad"/>
+          <input
+            type="number"
+            id="cantidad"
+            placeholder="Añade cantidad"
+            :value="cantidad"
+            @input="$event => $emit('update:cantidad', +$event.target.value)"
+          />
         </div>
 
         <div class="campo">
           <label for="categoria">Categoria:</label>
-          <select name="" id="categoria" :value="cantidad">
+          <select name="" id="categoria" :value="cantidad" @input="$event => $emit('update:categoria', $event.target.value)">
             <option value="">-- Seleccione --</option>
             <option value="ahorro">Ahorro</option>
             <option value="comida">Comida</option>
@@ -38,35 +57,77 @@
 </template>
 
 <script setup>
+//Vue
+import { ref } from 'vue';
+//Components
+import Alerta from "./Alerta.vue";
 //Img
-import cerrarModal from '../assets/img/cerrar.svg';
+import cerrarModal from "../assets/img/cerrar.svg";
+
+//Data
+const error = ref('');
 
 //Definiciones
-const emit = defineEmits(['ocultar-modal']);
+const emit = defineEmits([
+  "ocultar-modal",
+  "guardar-gasto",
+  "update:nombre",
+  "update:cantidad",
+  "update:categoria",
+]);
 
 const props = defineProps({
-    modal:{
-        type: Object,
-        required: true,
-    },
-    nombre:{
-        type: String,
-        required: true,
-    },
-    cantidad:{
-        type: [String, Number],
-        required: true,
-    },
-    categoria:{
-        type: String,
-        required: true,
-    }
+  modal: {
+    type: Object,
+    required: true,
+  },
+  nombre: {
+    type: String,
+    required: true,
+  },
+  cantidad: {
+    type: [String, Number],
+    required: true,
+  },
+  categoria: {
+    type: String,
+    required: true,
+  },
 });
 
 //Methods
 const ocultarModal = () => {
-    emit('ocultar-modal');
+  emit("ocultar-modal");
+};
+
+const guardarGasto = () => {
+  emit('guardar-gasto');
 }
+
+const agregarGasto = () => {
+  //Validar que no haya campos vacios
+  const { cantidad, categoria, nombre } = props;
+  if([nombre, cantidad, categoria].includes('')){
+    error.value = 'Todos los campos son obligatorios';
+    setTimeout(() => {
+      error.value = '';
+    }, 3000);
+    return;
+  }
+
+  //Validar la cantidad
+  if(cantidad <= 0){
+    error.value = 'Cantidad no válida';
+    setTimeout(() => {
+      error.value = '';
+    }, 3000);
+    return;
+  };
+
+  guardarGasto();
+
+};
+
 </script>
 
 <style scoped>
@@ -87,17 +148,17 @@ const ocultarModal = () => {
   width: 3rem;
   cursor: pointer;
 }
-.contenedor-formulario{
-    transition: all;
-    transition-duration: 300ms;
-    transition-timing-function: ease-in;
-    opacity: 0;
+.contenedor-formulario {
+  transition: all;
+  transition-duration: 300ms;
+  transition-timing-function: ease-in;
+  opacity: 0;
 }
-.contenedor-formulario.animar{
-    opacity: 1;
+.contenedor-formulario.animar {
+  opacity: 1;
 }
-.contenedor-formulario.cerrar{
-    opacity: 0;
+.contenedor-formulario.cerrar {
+  opacity: 0;
 }
 .nuevo-gasto {
   margin: 10rem auto 0 auto;
