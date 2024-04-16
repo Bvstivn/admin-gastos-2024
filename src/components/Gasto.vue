@@ -8,7 +8,7 @@
       />
       <div class="detalles">
         <p class="categoria">{{ gasto.categoria }}</p>
-        <p class="nombre">{{ gasto.nombre }}</p>
+        <p class="nombre" @click="seleccionarGasto(gasto.id)">{{ gasto.nombre }}</p>
         <p class="fecha">
           Fecha:
           <span> {{ formatearFecha(gasto.fecha) }}</span>
@@ -49,6 +49,14 @@ const props = defineProps({
     required: true,
   },
 });
+
+const emits = defineEmits(['seleccionar-gasto']);
+
+//Methods
+const seleccionarGasto = (id) => {
+  emits('seleccionar-gasto', id);
+}
+
 </script>
 
 <style scoped>

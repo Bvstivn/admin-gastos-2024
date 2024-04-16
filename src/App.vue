@@ -9,6 +9,7 @@
         />
         <ControlPresupuesto
           v-else
+          :gastado="gastado"
           :presupuesto="presupuesto"
           :disponible="disponible"
         />
@@ -18,7 +19,7 @@
   <main v-if="presupuesto > 0">
     <div class="listado-gastos contenedor">
       <h2>{{ gastos.length > 0 ? 'Gastos' : 'No hay gastos' }}</h2>
-      <Gasto v-for="gasto in gastos" :key="gasto.id" :gasto="gasto" />
+      <Gasto v-for="gasto in gastos" :key="gasto.id" :gasto="gasto" @seleccionar-gasto="seleccionarGasto"/>
     </div>
 
     <div class="crear-gasto">
@@ -33,12 +34,13 @@
     v-model:nombre="gasto.nombre"
     v-model:cantidad="gasto.cantidad"
     v-model:categoria="gasto.categoria"
+    :disponible="disponible"
   />
 </template>
 
 <script setup>
 //Vue
-import { ref, reactive } from "vue";
+import { ref, reactive, watch } from "vue";
 //Components
 import Modal from "./components/Modal.vue";
 import Presupuesto from "./components/Presupuesto.vue";
@@ -56,6 +58,7 @@ const modal = reactive({
 });
 const presupuesto = ref(0);
 const disponible = ref(0);
+const gastado = ref(0);
 const gasto = reactive({
   nombre: "",
   cantidad: "",
@@ -64,6 +67,24 @@ const gasto = reactive({
   fecha: Date.now(),
 });
 const gastos = ref([]);
+
+//Watch
+watch(gastos, () => {
+  const totalGastado = gastos.value.reduce((total, gasto) => gasto.cantidad + total, 0);
+  gastado.value = totalGastado;
+  disponible.value = presupuesto.value - totalGastado;
+},{
+  deep: true
+});
+
+watch(modal, () => {
+  if(!modal.mostrar){
+      //Reiniciar el objeto
+    reiniciarStateGasto();
+  }
+},{
+  deep: true
+});
 
 //Methods
 const definirPresupuesto = (cantidad) => {
@@ -93,6 +114,17 @@ const guardarGasto = () => {
   ocultarModal();
 
   //Reiniciar el objeto
+  reiniciarStateGasto();
+};
+
+const seleccionarGasto = (id) => {
+  console.log(id);
+  const gastoEditar = gastos.value.filter(gasto => gasto.id === id)[0];
+  Object.assign(gasto, gastoEditar);
+  mostrarModal();
+}
+
+const reiniciarStateGasto = () => {
   Object.assign(gasto, {
     nombre: "",
     cantidad: "",
@@ -100,7 +132,8 @@ const guardarGasto = () => {
     id: null,
     fecha: Date.now(),
   });
-};
+}
+
 </script>
 
 <style>
