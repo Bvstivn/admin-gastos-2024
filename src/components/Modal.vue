@@ -8,7 +8,7 @@
       :class="modal.animar ? 'animar' : 'cerrar'"
     >
       <form class="nuevo-gasto" @submit.prevent="agregarGasto">
-        <legend>Añadir Gasto</legend>
+        <legend>{{ id ? 'Guardar Cambios' : 'Añadir Gasto' }}</legend>
 
         <Alerta v-if="error">
           {{ error }}
@@ -21,7 +21,7 @@
             id="nombre"
             placeholder="Añade Nombre del Gasto"
             :value="nombre"
-            @input="$event => $emit('update:nombre', $event.target.value)"
+            @input="($event) => $emit('update:nombre', $event.target.value)"
           />
         </div>
 
@@ -32,13 +32,18 @@
             id="cantidad"
             placeholder="Añade cantidad"
             :value="cantidad"
-            @input="$event => $emit('update:cantidad', +$event.target.value)"
+            @input="($event) => $emit('update:cantidad', +$event.target.value)"
           />
         </div>
 
         <div class="campo">
           <label for="categoria">Categoria:</label>
-          <select name="" id="categoria" :value="cantidad" @input="$event => $emit('update:categoria', $event.target.value)">
+          <select
+            name=""
+            id="categoria"
+            :value="cantidad"
+            @input="($event) => $emit('update:categoria', $event.target.value)"
+          >
             <option value="">-- Seleccione --</option>
             <option value="ahorro">Ahorro</option>
             <option value="comida">Comida</option>
@@ -50,22 +55,27 @@
           </select>
         </div>
 
-        <input type="submit" value="Añadir Gasto" />
+        <input type="submit" value="Añadir Gasto" :value="[id ? 'Guardar Cambios' : 'Añadir Gasto']" />
       </form>
+
+      <button class="btn-aliminar" type="button" v-if="id" @click="$emit('eliminar-gasto')">
+        Eliminar Gasto
+      </button>
+
     </div>
   </div>
 </template>
 
 <script setup>
 //Vue
-import { ref } from 'vue';
+import { ref } from "vue";
 //Components
 import Alerta from "./Alerta.vue";
 //Img
 import cerrarModal from "../assets/img/cerrar.svg";
 
 //Data
-const error = ref('');
+const error = ref("");
 
 //Definiciones
 const emit = defineEmits([
@@ -74,6 +84,7 @@ const emit = defineEmits([
   "update:nombre",
   "update:cantidad",
   "update:categoria",
+  "eliminar-gasto"
 ]);
 
 const props = defineProps({
@@ -93,10 +104,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  disponible:{
-    type: Number, 
+  disponible: {
+    type: Number,
     required: true,
-  }
+  },
+  id: {
+    type: [String, null],
+    required: true,
+  },
 });
 
 //Methods
@@ -105,42 +120,53 @@ const ocultarModal = () => {
 };
 
 const guardarGasto = () => {
-  emit('guardar-gasto');
-}
+  emit("guardar-gasto");
+};
+
+const old = props.cantidad;
 
 const agregarGasto = () => {
   //Validar que no haya campos vacios
-  const { cantidad, categoria, nombre, disponible } = props;
-  if([nombre, cantidad, categoria].includes('')){
-    error.value = 'Todos los campos son obligatorios';
+  const { cantidad, categoria, nombre, disponible, id } = props;
+  if ([nombre, cantidad, categoria].includes("")) {
+    error.value = "Todos los campos son obligatorios";
     setTimeout(() => {
-      error.value = '';
+      error.value = "";
     }, 3000);
     return;
   }
 
   //Validar la cantidad
-  if(cantidad <= 0){
-    error.value = 'Cantidad no válida';
+  if (cantidad <= 0) {
+    error.value = "Cantidad no válida";
     setTimeout(() => {
-      error.value = '';
+      error.value = "";
     }, 3000);
     return;
-  };
+  }
 
   //Validar que el usuario no gaste mas de lo disponible
-  if(cantidad > disponible){
-    error.value = 'Excediste el presupuesto';
-    setTimeout(() => {
-      error.value = '';
-    }, 3000);
-    return;
-  };
+  if (id) {
+    //Tomar en cuenta el gasto ya realizado
+    if (cantidad > old + disponible) {
+      error.value = "Excediste el presupuesto";
+      setTimeout(() => {
+        error.value = "";
+      }, 3000);
+      return;
+    }
+  } else {
+    if (cantidad > disponible) {
+      error.value = "Excediste el presupuesto";
+      setTimeout(() => {
+        error.value = "";
+      }, 3000);
+      return;
+    }
+  }
 
   guardarGasto();
-
 };
-
 </script>
 
 <style scoped>
@@ -204,6 +230,17 @@ const agregarGasto = () => {
   background-color: var(--azul);
   color: var(--blanco);
   font-weight: 700;
+  cursor: pointer;
+}
+.btn-eliminar{
+  border: none;
+  padding: 1rem;
+  width: 100%;
+  background-color: #ef4444;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--blanco);
+  margin-top: 10rem;
   cursor: pointer;
 }
 </style>

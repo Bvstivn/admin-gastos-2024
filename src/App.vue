@@ -31,10 +31,12 @@
     v-if="modal.mostrar"
     @ocultar-modal="ocultarModal"
     @guardar-gasto="guardarGasto"
+    @eliminar-gasto="eliminarGasto"
     v-model:nombre="gasto.nombre"
     v-model:cantidad="gasto.cantidad"
     v-model:categoria="gasto.categoria"
     :disponible="disponible"
+    :id="gasto.id"
   />
 </template>
 
@@ -106,10 +108,17 @@ const ocultarModal = () => {
 };
 
 const guardarGasto = () => {
-  gastos.value.push({
+  if(gasto.id){
+    //Editando
+    const { id } = gasto;
+    const i = gastos.value.findIndex((gasto => gasto.id === id ));
+    gastos.value[i] = {...gasto};
+  }else{
+    gastos.value.push({
     id: generarId(),
     ...gasto,
   });
+  }
 
   ocultarModal();
 
@@ -132,6 +141,13 @@ const reiniciarStateGasto = () => {
     id: null,
     fecha: Date.now(),
   });
+}
+
+const eliminarGasto = () => {
+  if(confirm('Eliminar?')){
+  gastos.value = gastos.value.filter(gastoState => gastoState.id !== gasto.id);
+  ocultarModal();
+  }
 }
 
 </script>
