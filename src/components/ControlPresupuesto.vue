@@ -5,7 +5,7 @@
     </div>
 
     <div class="contenedor-presupuesto">
-      <button class="reset-app">Resetear App</button>
+      <button class="reset-app" @click="clickResetApp">Resetear App</button>
       <p>
         <span>Presupuesto:</span>
         {{ formatearCantidad(presupuesto) }}
@@ -43,6 +43,13 @@ const props = defineProps({
         required: true,
     }
 });
+
+const emit = defineEmits(['reset-app']);
+
+//Methods
+const clickResetApp = () => {
+  emit('reset-app');
+}
 
 </script>
 

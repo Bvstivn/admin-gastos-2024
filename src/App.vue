@@ -1,5 +1,5 @@
 <template>
-  <div :class="{fijar: modal.mostrar}">
+  <div :class="{ fijar: modal.mostrar }">
     <header>
       <h1>Planificador de gastos</h1>
       <div class="contenedor-header contenedor sombra">
@@ -12,14 +12,21 @@
           :gastado="gastado"
           :presupuesto="presupuesto"
           :disponible="disponible"
+          @reset-app="resetApp"
         />
       </div>
     </header>
   </div>
   <main v-if="presupuesto > 0">
+    <Filtros v-model:filtro="filtro" />
     <div class="listado-gastos contenedor">
-      <h2>{{ gastos.length > 0 ? 'Gastos' : 'No hay gastos' }}</h2>
-      <Gasto v-for="gasto in gastos" :key="gasto.id" :gasto="gasto" @seleccionar-gasto="seleccionarGasto"/>
+      <h2>{{ gastos.length > 0 ? "Gastos" : "No hay gastos" }}</h2>
+      <Gasto
+        v-for="gasto in gastosFiltrados"
+        :key="gasto.id"
+        :gasto="gasto"
+        @seleccionar-gasto="seleccionarGasto"
+      />
     </div>
 
     <div class="crear-gasto">
@@ -42,9 +49,10 @@
 
 <script setup>
 //Vue
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed, onMounted } from "vue";
 //Components
 import Modal from "./components/Modal.vue";
+import Filtros from "./components/Filtros.vue";
 import Presupuesto from "./components/Presupuesto.vue";
 import ControlPresupuesto from "./components/ControlPresupuesto.vue";
 import Gasto from "./components/Gasto.vue";
@@ -61,6 +69,7 @@ const modal = reactive({
 const presupuesto = ref(0);
 const disponible = ref(0);
 const gastado = ref(0);
+const filtro = ref("");
 const gasto = reactive({
   nombre: "",
   cantidad: "",
@@ -70,23 +79,62 @@ const gasto = reactive({
 });
 const gastos = ref([]);
 
-//Watch
-watch(gastos, () => {
-  const totalGastado = gastos.value.reduce((total, gasto) => gasto.cantidad + total, 0);
-  gastado.value = totalGastado;
-  disponible.value = presupuesto.value - totalGastado;
-},{
-  deep: true
+//onMounted
+onMounted(() => {
+  const presupuestoStorage = localStorage.getItem('presupuesto');
+  if(presupuestoStorage){
+    presupuesto.value = Number(presupuestoStorage);
+    disponible.value = Number(presupuestoStorage);
+  }
+  const gastosStorage = localStorage.getItem('gastos');
+  if(gastosStorage){
+    gastos.value = JSON.parse(gastosStorage);
+  }
 });
 
-watch(modal, () => {
-  if(!modal.mostrar){
-      //Reiniciar el objeto
-    reiniciarStateGasto();
+//Watch
+watch(
+  gastos,
+  () => {
+    const totalGastado = gastos.value.reduce(
+      (total, gasto) => gasto.cantidad + total,
+      0
+    );
+    gastado.value = totalGastado;
+    disponible.value = presupuesto.value - totalGastado;
+    localStorage.setItem('gastos', JSON.stringify(gastos.value));
+  },
+  {
+    deep: true,
   }
-},{
-  deep: true
-});
+);
+
+watch(
+  modal,
+  () => {
+    if (!modal.mostrar) {
+      //Reiniciar el objeto
+      reiniciarStateGasto();
+    }
+  },
+  {
+    deep: true,
+  }
+);
+
+watch(
+  presupuesto,
+  () => {
+    localStorage.setItem('presupuesto', presupuesto.value);
+  }
+);
+
+//Computed
+const gastosFiltrados = computed(() =>
+  filtro.value
+    ? gastos.value.filter((gasto) => gasto.categoria === filtro.value)
+    : gastos.value
+);
 
 //Methods
 const definirPresupuesto = (cantidad) => {
@@ -108,16 +156,16 @@ const ocultarModal = () => {
 };
 
 const guardarGasto = () => {
-  if(gasto.id){
+  if (gasto.id) {
     //Editando
     const { id } = gasto;
-    const i = gastos.value.findIndex((gasto => gasto.id === id ));
-    gastos.value[i] = {...gasto};
-  }else{
+    const i = gastos.value.findIndex((gasto) => gasto.id === id);
+    gastos.value[i] = { ...gasto };
+  } else {
     gastos.value.push({
-    id: generarId(),
-    ...gasto,
-  });
+      id: generarId(),
+      ...gasto,
+    });
   }
 
   ocultarModal();
@@ -128,10 +176,10 @@ const guardarGasto = () => {
 
 const seleccionarGasto = (id) => {
   console.log(id);
-  const gastoEditar = gastos.value.filter(gasto => gasto.id === id)[0];
+  const gastoEditar = gastos.value.filter((gasto) => gasto.id === id)[0];
   Object.assign(gasto, gastoEditar);
   mostrarModal();
-}
+};
 
 const reiniciarStateGasto = () => {
   Object.assign(gasto, {
@@ -141,15 +189,23 @@ const reiniciarStateGasto = () => {
     id: null,
     fecha: Date.now(),
   });
-}
+};
 
 const eliminarGasto = () => {
-  if(confirm('Eliminar?')){
-  gastos.value = gastos.value.filter(gastoState => gastoState.id !== gasto.id);
-  ocultarModal();
+  if (confirm("Eliminar?")) {
+    gastos.value = gastos.value.filter(
+      (gastoState) => gastoState.id !== gasto.id
+    );
+    ocultarModal();
+  }
+};
+
+const resetApp = () => {
+  if(confirm('Deseas reiniciar presupuesto y gastos?')){
+    gastos.value = [];
+    presupuesto.value = 0;
   }
 }
-
 </script>
 
 <style>
@@ -181,7 +237,7 @@ h1 {
 h2 {
   font-size: 3rem;
 }
-.fijar{
+.fijar {
   overflow: hidden;
   height: 100vh;
 }
@@ -219,10 +275,10 @@ header h1 {
   width: 5rem;
   cursor: pointer;
 }
-.listado-gastos{
+.listado-gastos {
   margin-top: 10rem;
 }
-.listado-gastos h2{
+.listado-gastos h2 {
   font-weight: 900;
   color: var(--gris-oscuro);
 }
